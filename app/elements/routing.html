@@ -37,7 +37,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       next();
     });
 
-    page('/', function() {
+    page('/home', function() {
       app.route = 'home';
     });
 
@@ -45,17 +45,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       app.route = 'home';
     });
 
-    page('/users', function() {
-      app.route = 'users';
+    page('/movies', function() {
+      app.route = 'movies';
     });
 
-    page('/users/:name', function(data) {
-      app.route = 'user-info';
+    page('/movies/:name', function(data) {
+      console.log("data",data);
+      app.route = 'movie-compare';
       app.params = data.params;
-    });
-
-    page('/contact', function() {
-      app.route = 'contact';
     });
 
     // 404

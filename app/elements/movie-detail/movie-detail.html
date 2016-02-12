@@ -1,0 +1,156 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+
+<dom-module id="movie-detail">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      span,
+      input {
+        @apply(--paper-font-body2);
+      }
+      
+      .avatar {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #ccc;
+        margin-right: 10px;
+        justify-content: space-around;
+        align-items: center;
+      }
+      
+      .blue {
+        background-color: #4fc3f7;
+      }
+      
+      paper-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      paper-icon-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+      }
+      
+      paper-item-body {
+        min-height: 72px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: center;
+      }
+      
+      .meta {
+        display: flex;
+        color: gray;
+      }
+      .meta span {
+        font-size: 12px;
+        margin-right: 2px;
+      }
+      .meta span:last-child {
+        margin-right: 0;
+      }
+      .meta span:last-child::after {
+        content: '';
+      }
+      .meta span::after {
+        content: '  |';
+      }
+      .list a {
+        text-decoration: none;
+        color: #3f51b5;
+      }
+      .list a:after {
+        content: ',';
+      }
+      .list a:last-of-type::after {
+        content: '';
+      }
+      .detail {
+        font-size: 14px;
+        line-height: 18px;
+        margin-bottom: 20px;
+      }
+    </style>
+    
+    <paper-item>
+      <paper-icon-item>
+        <div id="contentIcon">
+          <div class="avatar blue" item-icon="">{{data.Rank}}</div>
+        </div>
+        <paper-item-body two-line>
+          <div class="name">{{data.Name}}</div>
+          <div class="meta" hidden$={{summary}}>
+            <span>{{data.Duration}}</span>
+            <span class="list">
+              <template is="dom-repeat" items="{{data.Genres}}">
+                <a href="http://www.imdb.com/genre/{{item}}" target="_blank">{{item}}</a>
+              </template>
+            </span>
+          </div>
+        </paper-item-body>
+        <paper-icon-button icon="link" on-click="handleClick"></paper-icon-button>
+      </paper-icon-item>
+      <div hidden$={{summary}} class="detail">
+        <p>{{data.Description}}</p>
+        <div class="director"><b>Director</b>: {{data.Director}}</div>
+        <div class="actors list"><b>Actors</b>: 
+          <template is="dom-repeat" items="{{data.Actors}}">
+              <a href="https://en.wikipedia.org/wiki/{{item}}" target="_blank">{{item}}</a>
+          </template>
+        </div>
+      </div>
+    </paper-item>
+  </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'movie-detail',
+        handleClick: function () {
+          // link to zocdoc home page
+          window.open("https://www.zocdoc.com/",'_blank');
+        },
+        properties: {
+          data: {
+            type: Object, 
+            notify: true
+          },
+          summary: {
+            type: Boolean,
+            notify: true
+          }
+        },
+        listeners: {
+          'tap': 'toggleDetail'
+        },
+        toggleDetail: function(e) {
+          this.toggleAttribute("summary", !this.summary);
+        }
+      });
+    })();
+  </script>
+</dom-module>

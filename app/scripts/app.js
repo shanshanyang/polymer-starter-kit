@@ -14,13 +14,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   // and give it some initial binding values
   // Learn more about auto-binding templates at http://goo.gl/Dx1u2g
   var app = document.querySelector('#app');
-
+  
+  // set app auth data
+  app.authToken = "3b502b3f-b1ff-4128-bd99-626e74836d9c";
+  app.baseRequestUrl = "https://interview.zocdoc.com/api/1/FEE/";
   // Sets app default base URL
   app.baseUrl = '/';
   if (window.location.port === '') {  // if production
     // Uncomment app.baseURL below and
     // set app.baseURL to '/your-pathname/' if running from folder in production
-    // app.baseUrl = '/polymer-starter-kit/';
+    // app.baseUrl = '/app/';
   }
 
   app.displayInstalledToast = function() {

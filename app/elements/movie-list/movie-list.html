@@ -1,0 +1,237 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+
+
+<!--
+movie-list: 
+- home page: no detial view (or request detail view on click open)
+- all movie page: detail view with filter ability
+-->
+
+<link rel="import" href="../movie-detail/movie-detail.html">
+
+<dom-module id="movie-list">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      span {
+        @apply(--paper-font-body1);
+      }
+      
+      .list {
+        display: flex;
+        flex-direction: column;
+        padding-top: 12px;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+      
+      #toggleDetail {
+        margin: 15px 0;
+      }
+      #toggleDetail:before {
+        content: 'Toggle All Details:';
+        margin-right: 10px;
+      }
+    </style>
+    <!--{{requestUrl}}-->
+    <!--{{params}}-->
+    <iron-ajax
+      auto
+      url="{{requestUrl}}"
+      params='{{params}}'
+      handle-as="json"
+      debounce-duration="300"
+      on-response="generateFilter"></iron-ajax>
+      
+      <paper-input label="Search By Release Year" value="{{searchAnything::input}}"></paper-input>
+
+      <paper-toggle-button id="toggleDetail"></paper-toggle-button>
+      <div class="list">
+        <template is="dom-repeat" id="listTmp" items="{{lists}}" as="item"
+            filter="{{computeFilter(searchAnything)}}" >
+            <!--observe="Genres Name">-->
+          <!--<paper-material elevation="1">-->
+            <movie-detail data={{item}} summary></movie-detail>              
+          <!--</paper-material>-->
+        </template>
+      </div>
+  </template>
+  <script>
+    (function() {
+      'use strict';
+      // use lodash instead
+      Array.prototype.getUnique = function(){
+         var u = {}, a = [];
+         for(var i = 0, l = this.length; i < l; ++i){
+            if(u.hasOwnProperty(this[i])) {
+               continue;
+            }
+            a.push(this[i]);
+            u[this[i]] = 1;
+         }
+         return a;
+      }
+
+      Polymer({
+        is: 'movie-list',
+        listeners: {
+          "toggleDetail.change": "toggleAllDetails"
+        },
+        toggleAllDetails: function (e) {
+          var items = this.querySelectorAll('movie-detail');
+          for( var index=0; index < items.length; index++ ) {
+            (e.target.checked) ? items[index].removeAttribute("summary") : items[index].setAttribute("summary", true);
+          }
+        },
+        generateFilter: function (data) {
+          
+          if(data.detail.status == "200") {
+            
+            var filters = {};
+            console.log("response!", data.detail.response);
+            var movies = data.detail.response,
+              keys = Object.keys(movies[0]),
+              sample_filters = ["Genres"];
+            // merge all values into filters object
+            movies.map(function (movie) {
+              
+              for(var i=0; i<keys.length; i++) {
+                // don't create the exception keys in filters object
+                if(sample_filters.indexOf(keys[i]) > -1) { 
+                
+                  if(!filters.hasOwnProperty(keys[i]) ) {
+                    filters[keys[i]] = [];
+                  }
+                  
+                  var val = movie[keys[i]];
+                  
+                  filters[keys[i]] = filters[keys[i]].concat(val);
+                  filters[keys[i]] = filters[keys[i]].getUnique();
+                }
+              }
+            });
+            
+            this.lists = movies;
+            // window.localStorage.setItem('filters', JSON.stringify(filters));
+            document.querySelector('movie-filter').setAttribute('data',JSON.stringify(filters));
+
+          }
+        },
+        computeFilter: function (string) {
+          // Filter by year
+          if(this.validYear(string)) {
+            return function(item) {
+              
+              var match = item.Name.match(/(\d+)/g);
+              if(match) {
+                return Number(match[0]) == Number(string);
+              }
+            };
+          } 
+        },
+        validYear: function (string) {
+          var text = /^[0-9]{4}$/;
+          var current_year=new Date().getFullYear();
+          
+          if(text.test(string) && Number(string) > 1920 && Number(string) < current_year) {
+            return true
+          } else {
+            return false;
+          }
+        },
+
+        properties: {
+          authToken: {
+            type: String
+          },
+          baseRequestUrl: {
+            type: String
+          },
+          requestPath: {
+            type: String
+          },
+          requestUrl: {
+            type: String
+          },
+          params: {
+            type: String
+          },
+          movieIds: {
+            type: Array,
+            value: []
+          },
+          startRankIndex: {
+            type: Number,
+            value: null
+          },
+          numMovies: {
+            type: Number,
+            value: null
+          },
+          sortByYear: {
+            type: Number
+          },
+          filterdata: {
+            type: String,
+            reflectToAttribute: true,
+            value: function () {
+              return '';
+            },
+            notify: true
+          },
+          items: {
+            type: Array
+          }
+        },
+        observers: [
+          "updateItems(items, filterdata)"
+        ],
+        updateItems: function (items, filterdata) {
+          var updateList = function (item) {
+            var filter = JSON.parse(filterdata);
+              var customizer = function (oldval, newval) {
+                return _.intersection(oldval, newval).length > 0;
+              };
+              return _.isMatchWith(item, filter, customizer);
+          }
+          if(filterdata) {
+            items = items.filter(updateList);
+          } 
+          this.lists = items;
+        },
+        ready: function () {
+          // prepare the ajax equest
+          switch(this.requestPath) {
+            case "AllMovies":
+              this.requestUrl = this.baseRequestUrl + this.requestPath;
+              this.params = {"authToken":this.authToken};
+              break;
+            case "MoviesByRank":
+              this.requestUrl = this.baseRequestUrl + this.requestPath;
+              this.params = {"authToken":this.authToken,"startRankIndex":this.startRankIndex,"numMovies":this.numMovies};
+              break;
+          }
+        }
+      });
+    })();
+  </script>
+</dom-module>

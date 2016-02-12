@@ -1,0 +1,144 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/iron-icons/maps-icons.html">
+
+<!--
+  movie-filter: 
+  - home page: no filter
+  - all movie page: generate filter data from fetch result. 
+-->
+
+<dom-module id="movie-filter">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+
+      span,
+      input {
+        @apply(--paper-font-body2);
+      }
+      
+      .filter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .filter-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+      paper-item {
+        min-height: 30px;
+        font-size: 12px;
+      }
+      paper-checkbox {
+        width: 100%;
+      }
+    </style>
+    <!--Only coded one filter as example -->
+    <div class="filter">
+        <div class="filter-header" hidden$={{noFilter}}>
+          <h4>Genres</h4>
+          <paper-icon-button icon="close" disabled$={{isDisabled}} on-click="clearAll"></paper-icon-button>
+        </div>
+      
+        <template is="dom-repeat" items="{{data.Genres}}">
+            <paper-checkbox>{{item}}</paper-checkbox>
+        </template>
+    </div>
+    </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'movie-filter',
+        selectedFilters: [],
+        save: function (data) {
+          window.localStorage.setItem('storedFilter', data);
+          // update movie-list property filterData
+          document.querySelector('movie-list').setAttribute('filterData', window.localStorage.getItem('storedFilter'));
+        },
+        properties: {
+          data: {
+            type: Object,
+            value: function () {
+              // return JSON.parse(window.localStorage.getItem('filters'));
+            }
+          },
+          isDisabled: {
+            type: Boolean,
+            value: true
+          },
+          noFilter: {
+            type: Boolean,
+            value: false
+          }
+        },
+        listeners: {
+          'change': "handleSelect"
+        },
+        clearAll: function (e) {
+          this.selectedFilters = [];
+          // reset all the checked checkbox
+          var checkboxs = this.querySelectorAll('paper-checkbox');
+          for(var i = 0; i < checkboxs.length; i++) {
+            checkboxs[i].checked = false;
+          }
+          this.resetState();
+        },
+        resetState: function () {
+          // disable the clear button
+          this.isDisabled = true;
+          window.localStorage.removeItem('storedFilter');
+          document.querySelector('movie-list').setAttribute('filterData', '');
+        },
+        handleSelect: function(e,detail) {
+          if(e.target.checked) {
+            
+            if(this.isDisabled) { this.isDisabled = false; }
+            
+            this.selectedFilters.push(e.target.innerText);
+          } else {
+            this.selectedFilters.splice(this.selectedFilters.indexOf(e.target.innerText));
+          } 
+          if(this.selectedFilters.length == 0) {
+            // reset the state
+            this.resetState();
+          } else {
+            this.save(JSON.stringify({"Genres": this.selectedFilters}));
+          } 
+        },
+        created: function () {
+          // if(window.localStorage.hasOwnProperty('storedFilter')){
+            window.localStorage.removeItem('storedFilter');
+            window.localStorage.removeItem('filters');
+          // }
+        }
+      });
+      
+    })();
+  </script>
+</dom-module>

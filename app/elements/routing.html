@@ -31,26 +31,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       app.closeDrawer();
       next();
     }
+    
+    function homeRoute (ctx, next) {
+      app.route = "home";
+      
+      var requestAjax = document.querySelector('iron-ajax#ajax-home');
+      requestAjax.url = app.baseRequestUrl + "MoviesByRank";
+      requestAjax.params = {"authToken":app.authToken,"startRankIndex":1,"numMovies":10};
+      requestAjax.addEventListener('response', function(response) {
+        localStorage['movie-list-home'] = JSON.stringify(requestAjax.lastResponse);
+      });
+      requestAjax.addEventListener('error', function(response) {
+        document.querySelector('movie-list#home').setAttribute('lists', localStorage['movie-list-home']);
+      });
+      requestAjax.generateRequest();
+    }
+    
+    function moviesRoute (ctx, next) {
+      app.route = "movies";
+
+      var requestAjax = document.querySelector('iron-ajax#ajax-movies');
+      requestAjax.url = app.baseRequestUrl + "AllMovies";
+      requestAjax.params = {"authToken":app.authToken};
+      requestAjax.addEventListener('response', function(response) {
+        localStorage['movie-list-movies'] = JSON.stringify(requestAjax.lastResponse);
+      });
+      requestAjax.addEventListener('error', function(response) {
+        document.querySelector('movie-list#movies').setAttribute('lists', localStorage['movie-list-movies']);
+      });
+      requestAjax.generateRequest();
+    }
 
     // Routes
     page('*', scrollToTop, closeDrawer, function(ctx, next) {
       next();
     });
 
-    page('/home', function() {
-      app.route = 'home';
-    });
+    page('/home', homeRoute);
 
-    page(app.baseUrl, function() {
-      app.route = 'home';
-    });
+    page(app.baseUrl, homeRoute);
 
-    page('/movies', function() {
-      app.route = 'movies';
-    });
+    page('/movies', moviesRoute);
 
     page('/movies/:name', function(data) {
-      console.log("data",data);
       app.route = 'movie-compare';
       app.params = data.params;
     });

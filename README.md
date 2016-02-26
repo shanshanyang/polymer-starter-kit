@@ -65,6 +65,8 @@ The full starter kit requires the following major dependencies:
 - bower, a Node.js-based package manager used to install front-end packages (like Polymer).
 
 **To install dependencies:**
+- Add offline feature
+
 
 1)  Check your Node.js version.
 

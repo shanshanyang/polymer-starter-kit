@@ -18,6 +18,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   // set app auth data
   app.authToken = "3b502b3f-b1ff-4128-bd99-626e74836d9c";
   app.baseRequestUrl = "https://interview.zocdoc.com/api/1/FEE/";
+  app.zocdocApiUrl = "https://interview.zocdoc.com/api/1/FEE/";
+  
   // Sets app default base URL
   app.baseUrl = '/';
   if (window.location.port === '') {  // if production
@@ -42,6 +44,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   // See https://github.com/Polymer/polymer/issues/1381
   window.addEventListener('WebComponentsReady', function() {
     // imports are loaded and elements have been registered
+    
   });
 
   // Main area's paper-scroll-header-panel custom condensing transformation of

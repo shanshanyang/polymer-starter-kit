@@ -16,6 +16,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
 
 
 <!--
@@ -54,20 +55,20 @@ movie-list:
     </style>
     <!--{{requestUrl}}-->
     <!--{{params}}-->
-    <iron-ajax
-      auto
-      url="{{requestUrl}}"
-      params='{{params}}'
-      handle-as="json"
-      debounce-duration="300"
-      on-response="generateFilter"></iron-ajax>
+    
+      <paper-progress id="request-progress"
+                      indeterminate
+                      hidden$="[[!activeRequest]]">
+      </paper-progress>
       
       <paper-input label="Search By Release Year" value="{{searchAnything::input}}"></paper-input>
 
       <paper-toggle-button id="toggleDetail"></paper-toggle-button>
+      
+      
       <div class="list">
-        <template is="dom-repeat" id="listTmp" items="{{lists}}" as="item"
-            filter="{{computeFilter(searchAnything)}}" >
+        <template is="dom-repeat" id="{{id}}" items="{{items}}" as="item"
+            filter="{{computeFilter(searchAnything)}}">
             <!--observe="Genres Name">-->
           <!--<paper-material elevation="1">-->
             <movie-detail data={{item}} summary></movie-detail>              
@@ -102,39 +103,31 @@ movie-list:
             (e.target.checked) ? items[index].removeAttribute("summary") : items[index].setAttribute("summary", true);
           }
         },
-        generateFilter: function (data) {
+        _generateFilter: function (newVal) {
           
-          if(data.detail.status == "200") {
+          var filters = {};
+          var movies = newVal,
+            keys = Object.keys(movies[0]),
+            sample_filters = ["Genres"];
+          // merge all values into filters object
+          movies.map(function (movie) {
             
-            var filters = {};
-            console.log("response!", data.detail.response);
-            var movies = data.detail.response,
-              keys = Object.keys(movies[0]),
-              sample_filters = ["Genres"];
-            // merge all values into filters object
-            movies.map(function (movie) {
+            for(var i=0; i<keys.length; i++) {
+              // don't create the exception keys in filters object
+              if(sample_filters.indexOf(keys[i]) > -1) { 
               
-              for(var i=0; i<keys.length; i++) {
-                // don't create the exception keys in filters object
-                if(sample_filters.indexOf(keys[i]) > -1) { 
-                
-                  if(!filters.hasOwnProperty(keys[i]) ) {
-                    filters[keys[i]] = [];
-                  }
-                  
-                  var val = movie[keys[i]];
-                  
-                  filters[keys[i]] = filters[keys[i]].concat(val);
-                  filters[keys[i]] = filters[keys[i]].getUnique();
+                if(!filters.hasOwnProperty(keys[i]) ) {
+                  filters[keys[i]] = [];
                 }
+                
+                var val = movie[keys[i]];
+                
+                filters[keys[i]] = filters[keys[i]].concat(val);
+                filters[keys[i]] = filters[keys[i]].getUnique();
               }
-            });
-            
-            this.lists = movies;
-            // window.localStorage.setItem('filters', JSON.stringify(filters));
-            document.querySelector('movie-filter').setAttribute('data',JSON.stringify(filters));
-
-          }
+            }
+          });
+          this._setFilters(filters);
         },
         computeFilter: function (string) {
           // Filter by year
@@ -160,76 +153,108 @@ movie-list:
         },
 
         properties: {
-          authToken: {
-            type: String
-          },
-          baseRequestUrl: {
-            type: String
-          },
-          requestPath: {
-            type: String
-          },
-          requestUrl: {
-            type: String
-          },
-          params: {
-            type: String
+          
+          activeRequest: {
+            type: Boolean,
+            value: function () {
+              return this.lists ? true : false;
+            }
           },
           movieIds: {
             type: Array,
             value: []
-          },
-          startRankIndex: {
-            type: Number,
-            value: null
-          },
-          numMovies: {
-            type: Number,
-            value: null
           },
           sortByYear: {
             type: Number
           },
           filterdata: {
             type: String,
-            reflectToAttribute: true,
             value: function () {
               return '';
             },
-            notify: true
+            observer: "_refreshList"
+          },
+          filters: {
+            type: Object,
+            notify: true,
+            readOnly: true
+          },
+          lists: {
+            type: Array,
+            observer: "_listupdate"
           },
           items: {
-            type: Array
+            type: Array,
+            notify: true,
+            value: function() {
+              return [];
+            }
           }
         },
         observers: [
-          "updateItems(items, filterdata)"
+          'moviesAddedOrRemoved(items.splices)'
         ],
-        updateItems: function (items, filterdata) {
-          var updateList = function (item) {
-            var filter = JSON.parse(filterdata);
+        _listupdate: function (newVal, oldVal) {
+          
+          // page load
+          var self = this;
+          self.items = [];
+
+          if(newVal && newVal !== oldVal) {
+            newVal.forEach(function(elm) {
+              self.addMovie(elm);
+            });
+          }
+          
+          self._generateFilter(self.lists);
+        },
+        
+        _refreshList: function (newVal, oldVal) {
+          var self = this;
+          if(!newVal && oldVal) {
+            this.items = [];
+            self.lists.forEach(function(elm) {
+              self.addMovie(elm);
+            });
+          }
+          // page route
+          if(  newVal && self.items.length > 0 && newVal !== oldVal){
+            
+            var filter = JSON.parse(newVal);
+            this.items = [];
+
+            var updateList = function (item) {
               var customizer = function (oldval, newval) {
                 return _.intersection(oldval, newval).length > 0;
               };
-              return _.isMatchWith(item, filter, customizer);
+              return _.isMatchWith(item, JSON.parse(window.localStorage.getItem("storedFilter")), customizer);
+            };
+            
+            self.lists.forEach(function(elm) {
+              if(updateList(elm)) {
+                self.addMovie(elm);
+              }
+            });
           }
-          if(filterdata) {
-            items = items.filter(updateList);
-          } 
-          this.lists = items;
         },
-        ready: function () {
-          // prepare the ajax equest
-          switch(this.requestPath) {
-            case "AllMovies":
-              this.requestUrl = this.baseRequestUrl + this.requestPath;
-              this.params = {"authToken":this.authToken};
-              break;
-            case "MoviesByRank":
-              this.requestUrl = this.baseRequestUrl + this.requestPath;
-              this.params = {"authToken":this.authToken,"startRankIndex":this.startRankIndex,"numMovies":this.numMovies};
-              break;
+        moviesAddedOrRemoved: function(changeRecord) {
+          if(changeRecord) {
+            changeRecord.indexSplices.forEach(function(s) {
+              s.removed.forEach(function(movie) {
+                // console.info(movie.Name + ' was removed');
+              });
+              // console.info(s.addedCount + ' movies were added');
+            }, this);
           }
+        },
+        
+        addMovie: function(movie) {
+          this.push('items', movie);
+        },
+  
+        removeMovie: function(movie) {
+          var index = this.items.indexOf(movie);
+          this.splice('items', index, 1);
         }
       });
     })();

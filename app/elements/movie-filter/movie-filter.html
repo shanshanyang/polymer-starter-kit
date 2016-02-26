@@ -79,14 +79,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         save: function (data) {
           window.localStorage.setItem('storedFilter', data);
           // update movie-list property filterData
-          document.querySelector('movie-list').setAttribute('filterData', window.localStorage.getItem('storedFilter'));
+          document.querySelector('movie-list#movies').setAttribute('filterData', window.localStorage.getItem('storedFilter'));
         },
         properties: {
           data: {
-            type: Object,
-            value: function () {
-              // return JSON.parse(window.localStorage.getItem('filters'));
-            }
+            type: Object
           },
           isDisabled: {
             type: Boolean,
@@ -113,7 +110,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // disable the clear button
           this.isDisabled = true;
           window.localStorage.removeItem('storedFilter');
-          document.querySelector('movie-list').setAttribute('filterData', '');
+          document.querySelector('movie-list#movies').setAttribute('filterData', '');
         },
         handleSelect: function(e,detail) {
           if(e.target.checked) {
@@ -122,7 +119,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             
             this.selectedFilters.push(e.target.innerText);
           } else {
-            this.selectedFilters.splice(this.selectedFilters.indexOf(e.target.innerText));
+            this.selectedFilters.splice(this.selectedFilters.indexOf(e.target.innerText), 1);
           } 
           if(this.selectedFilters.length == 0) {
             // reset the state
@@ -130,12 +127,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             this.save(JSON.stringify({"Genres": this.selectedFilters}));
           } 
+          
         },
         created: function () {
-          // if(window.localStorage.hasOwnProperty('storedFilter')){
+          if(window.localStorage.hasOwnProperty('storedFilter')){
             window.localStorage.removeItem('storedFilter');
-            window.localStorage.removeItem('filters');
-          // }
+          }
         }
       });
       
